@@ -76,7 +76,8 @@ def load_tool_research_data(data_path: os.PathLike, label: Literal["good","bad"]
 
 
 def datafile_read(file: os.PathLike, plotting=True):
-    """loads and plots the data from the datafile
+    """
+    loads and plots the data from the datafile
 
     Keyword Arguments:
         file {str} -- [path of the file] 
