@@ -70,3 +70,43 @@ def window_data(X, y, features, window_size):
         npf = np.concatenate((npf, appendf))
         
     return npX, npy, npf
+
+def plot_class_dist(y, features):
+    """
+    Plots the class distribution operation wise
+
+    Parameters: 
+    - y: 1D array of binary values
+    - features: 2D array with additional features
+
+    Returns:
+    Class distribution plot
+    """
+    y_reshaped = y.reshape((-1, 1))
+    plots = np.hstack((features, y_reshaped))
+    
+    for machine in np.unique(features[:, 0]):
+        indices = np.where(plots[:, 0] == machine)
+        machineplots = plots[indices]
+        counts = {operation: {'0s': 0, '1s': 0} for operation in np.unique(machineplots[:, 3])}
+        
+        for value, operation in zip(machineplots[:, -1], machineplots[:, 3]):
+            if value == "1.0":
+                counts[operation]['1s'] += 1
+            else:
+                counts[operation]['0s'] += 1
+        
+        labels = list(counts.keys())
+        count_zeros = [counts[label]['0s'] for label in labels]
+        count_ones = [counts[label]['1s'] for label in labels]
+        
+        fig, ax = plt.subplots(figsize=(20, 5))
+        
+        bars1 = ax.bar(labels, count_zeros, label="NOK", color="red")
+        bars2 = ax.bar(labels, count_ones, bottom=count_zeros, label='OK', color="blue")  # Stack on top of 0s
+        
+        ax.set_xlabel("Operations")
+        ax.set_ylabel("Counts")
+        ax.set_title(f'Counts of OK/NOK for {machine}')
+        ax.legend()
+        plt.show()
