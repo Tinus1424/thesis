@@ -4,6 +4,10 @@ import numpy as np
 import pandas as pd
 import data_loader_utils
 from pathlib import Path
+
+import scipy.stats as stats
+import statsmodels.api as sm
+
 import matplotlib.pyplot as plt 
 
 def preprocess_data(X_data, y_data):
@@ -110,3 +114,24 @@ def plot_class_dist(y, features):
         ax.set_title(f'Counts of OK/NOK for {machine}')
         ax.legend()
         plt.show()
+
+
+
+
+def qqplot(sample, distributions):
+    """
+    Draws Q-Q plots for a sample given distributions and degrees of freedom
+
+    Parameters:
+    - sample: 2D arrray
+    - distributions: Dictionary with names for keys and stats distributions for values
+    """
+
+    axis = ["X", "Y", "Z"]
+    for title, dist in distributions.items():
+        fig, ax = plt.subplots(1, 3, figsize = (20, 4))
+        for i in range(len(axis)):
+            sm.qqplot(sample[:, i], dist, fit = True, line = "s", ax = ax[i])
+            ax[i].set_title(f"{axis[i]}-axis")
+        fig.suptitle(f"Q-Q plot for {title} distribution")
+    return
