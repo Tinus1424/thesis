@@ -95,7 +95,7 @@ def plot_class_dist(y, features):
         counts = {operation: {'0s': 0, '1s': 0} for operation in np.unique(machineplots[:, 3])}
         
         for value, operation in zip(machineplots[:, -1], machineplots[:, 3]):
-            if value == "1.0":
+            if value == "1":
                 counts[operation]['1s'] += 1
             else:
                 counts[operation]['0s'] += 1
@@ -106,15 +106,15 @@ def plot_class_dist(y, features):
         
         fig, ax = plt.subplots(figsize=(20, 5))
         
-        bars1 = ax.bar(labels, count_zeros, label="NOK", color="red")
-        bars2 = ax.bar(labels, count_ones, bottom=count_zeros, label='OK', color="blue")  # Stack on top of 0s
+        bars1 = ax.bar(labels, count_zeros, label="Abnormal", color="red")
+        bars2 = ax.bar(labels, count_ones, bottom=count_zeros, label="Normal", color="blue")  # Stack on top of 0s
+        ax.set_xlim(-0.5, 15-0.5)
         
         ax.set_xlabel("Operations")
         ax.set_ylabel("Counts")
-        ax.set_title(f'Counts of OK/NOK for {machine}')
+        ax.set_title(f'Counts of Abnormal and Normal Processes for {machine}')
         ax.legend()
         plt.show()
-
 
 
 
