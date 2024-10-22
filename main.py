@@ -4,11 +4,9 @@ import numpy as np
 import pandas as pd
 import data_loader_utils
 from pathlib import Path
-
-import scipy.stats as stats
-import statsmodels.api as sm
-
 import matplotlib.pyplot as plt 
+
+
 
 def preprocess_data(X_data, y_data):
     """
