@@ -6,6 +6,9 @@ import data_loader_utils
 from pathlib import Path
 import matplotlib.pyplot as plt 
 
+from cv2 import resize
+from pywt import cwt
+
 
 
 def preprocess_data(X_data, y_data):
@@ -115,21 +118,121 @@ def plot_class_dist(y, features):
         plt.show()
 
 
-
-def qqplot(sample, distributions):
+def augment(T, X_train, p):
     """
-    Draws Q-Q plots for a sample given distributions and degrees of freedom
+    Augments X_train
 
     Parameters:
-    - sample: 2D arrray
-    - distributions: Dictionary with names for keys and stats distributions for values
-    """
+    - T: List of augmentation functions
+    - X_train: Array of training examples
+    - p: Number of windows
 
-    axis = ["X", "Y", "Z"]
-    for title, dist in distributions.items():
-        fig, ax = plt.subplots(1, 3, figsize = (20, 4))
-        for i in range(len(axis)):
-            sm.qqplot(sample[:, i], dist, fit = True, line = "s", ax = ax[i])
-            ax[i].set_title(f"{axis[i]}-axis")
-        fig.suptitle(f"Q-Q plot for {title} distribution")
-    return
+    Returns:
+    - X_augmented_arr: Array of augmented training examples
+
+    """
+    X = np.copy(X_train)
+    X_augmented_list = []
+    n_samples, n_timesteps, n_sensors = X.shape
+
+    b = compute_windows(n_timesteps, p) # Compute window bounds for p windows
+
+    for t in T:
+        print(f"Processing {t} transformations")
+        for x in X:
+            W_j = np.random.randint(1, p + 1) # Randomly choose a window W_j
+
+            b_lower, b_upper = b[W_j] # Get the upper and lower bound of the windows
+            c1 = np.random.randint(b_lower, b_upper + 1) # Sample two random numbers within the window
+            c2 = np.random.randint(b_lower, b_upper + 1)
+
+            if c1 > c2: # Ensure c1 > c2
+                c1, c2 = c2, c1
+                
+            x_augmented = t(x, c1, c2, p, b) # Augment x in window W_j with Ti 
+            x_scalogram = compute_scalogram(x_augmented, n_sensors)
+            X_augmented_list.append(x_scalogram)
+
+    X_augmented = np.array(X_augmented_list)
+    return X_augmented_arr
+
+
+def compute_windows(n_timesteps, p):
+    """
+    Helper function for augment()
+
+    """
+    windows = {}
+    
+    window_size = n_timesteps // p
+    remainder = n_timesteps % p
+    
+    start = 0
+    for i in range(1, p +1):
+        end = start + window_size + (1 if i <= remainder else 0)
+        windows[i] = (start, end -1)
+        start = end
+        
+    return windows
+
+def identity(x, c1, c2, p = None, b = None):
+    """
+    Helper function for augment()
+
+    """
+    return x
+
+def cut_paste(x, c1, c2, p , b):
+    """
+    Helper function for augment()
+
+    """
+    cut_snippet = x[c1:c2, :]
+    delta = c2 - c1
+    
+    W_j = np.random.randint(1, p + 1)
+    b_lower_j, b_upper_j = b[W_j]
+
+    p1 = np.random.randint(b_lower_j, b_upper_j - delta + 1)
+    p2 = p1 + delta
+
+    x[p1:p2, :] = cut_snippet
+    return x
+    
+def mean_shift(x, c1, c2, p = None, b = None):
+    """
+    Helper function for augment()
+
+    """
+    time_series_mean = x[c1:c2].mean(axis=0)
+    x[c1:c2] = x[c1:c2] + time_series_mean
+    return x
+
+
+def missing_signal(x, c1, c2, p = None, b = None):
+    """
+    Helper function for augment()
+
+    """
+    constant = x[c1].copy()
+    x[c1:c2] = constant
+    return x
+
+def compute_scalogram(x, n_sensors):
+    """
+    Helper function for augment()
+
+    """
+    x_scalogram_list = []
+    
+    for m in range(n_sensors):
+        cwtmatr, freqs = cwt(x[:, m], np.arange(1, 129), "morl")
+        cwtmatr_reshaped = resize(cwtmatr, (128, 512))
+        x_scalogram_list.append(cwtmatr_reshaped)
+        
+    x_scalogram_raw = np.array(x_scalogram_list)
+    x_scalogram = x_scalogram_raw.reshape(128, 512, 3)
+    return x_scalogram
+
+
+
