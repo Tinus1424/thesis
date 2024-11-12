@@ -1,23 +1,4 @@
-def preprocess_data(X_data, y_data):
-    """
-    Preprocesses data and splits y into target and additional features
 
-    Parameters:
-    - X_data: List of 3D arrays
-    - y_data: List of labels
-
-    Returns:
-    - X: List of 3D arrays in np.float32
-    - y: List of target labels
-    - features: List of additional labels
-    """
-    y_split = [y.split("_") for y in y_data] # Split the Machine, Month, Year, Process, ExampleId, Target
-    y_np = np.array(y_split) # Convert to np for easier indexing
-    ytarget = y_np[:, -1] # Extract target value
-    features = list(y_np[:,:-1]) # Extract additional information
-    y = [1 if "good" in y else 0 for y in ytarget] # List of y values
-    X = [X.astype(np.float32) for X in X_data] # List of X values in the same dtype
-    return X, y, features
 
 
 def window_data(X, y, features, window_size):
