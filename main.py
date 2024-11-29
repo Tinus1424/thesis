@@ -97,6 +97,7 @@ def plot_class_dist(y, features):
 
 from sklearn.model_selection import train_test_split
 def machine_split(df, m = 3, test_size = 0.7):
+    seed = 27
     M01 = df[df["MC"] == "M01"]
     X_M01, y_M01 = M01.iloc[:,:m], M01.iloc[:,-1]
     
@@ -106,8 +107,8 @@ def machine_split(df, m = 3, test_size = 0.7):
     M03 = df[df["MC"] == "M03"]
     X_M03, y_M03 = M03.iloc[:,:m], M03.iloc[:,-1]
     
-    X_M01_train, X_M01_test, y_M01_train, y_M01_test = train_test_split(X_M01, y_M01, test_size = test_size, stratify = y_M01)
-    X_M02_train, X_M02_test, y_M02_train, y_M02_test = train_test_split(X_M02, y_M02, test_size = test_size, stratify = y_M02)
+    X_M01_train, X_M01_test, y_M01_train, y_M01_test = train_test_split(X_M01, y_M01, test_size = test_size, stratify = y_M01, random_state = seed)
+    X_M02_train, X_M02_test, y_M02_train, y_M02_test = train_test_split(X_M02, y_M02, test_size = test_size, stratify = y_M02, random_state = seed)
         
     X_trainval = pd.concat((X_M01_train, X_M02_train))
     y_trainval = pd.concat((y_M01_train, y_M02_train))
@@ -118,6 +119,7 @@ def machine_split(df, m = 3, test_size = 0.7):
 
 
 def time_split(df, m = 3, test_size = 0.75):
+    seed = 27
     Feb_2019 = df[(df["MM"] == "Feb") & (df["YY"] == "2019")]
     Aug_2019 = df[(df["MM"] == "Aug") & (df["YY"] == "2019")]
     Feb_2020 = df[(df["MM"] == "Feb") & (df["YY"] == "2020")]
@@ -132,13 +134,13 @@ def time_split(df, m = 3, test_size = 0.75):
     X_Feb_2021, y_Feb_2021 = Feb_2021.iloc[:,:m], Feb_2021.iloc[:,-1]
     X_Aug_2021, y_Aug_2021 = Aug_2021.iloc[:,:m], Aug_2021.iloc[:,-1]
     
-    X_Feb_2019_train, X_Feb_2019_test, y_Feb_2019_train, y_Feb_2019_test = train_test_split(X_Feb_2019, y_Feb_2019, test_size = test_size, stratify = y_Feb_2019)
+    X_Feb_2019_train, X_Feb_2019_test, y_Feb_2019_train, y_Feb_2019_test = train_test_split(X_Feb_2019, y_Feb_2019, test_size = test_size, stratify = y_Feb_2019, random_state = seed)
         
-    X_Aug_2019_train, X_Aug_2019_test, y_Aug_2019_train, y_Aug_2019_test = train_test_split(X_Aug_2019, y_Aug_2019, test_size = test_size, stratify = y_Aug_2019)
+    X_Aug_2019_train, X_Aug_2019_test, y_Aug_2019_train, y_Aug_2019_test = train_test_split(X_Aug_2019, y_Aug_2019, test_size = test_size, stratify = y_Aug_2019, random_state = seed)
     
-    X_Feb_2020_train, X_Feb_2020_test, y_Feb_2020_train, y_Feb_2020_test = train_test_split(X_Feb_2020, y_Feb_2020, test_size = test_size, stratify = y_Feb_2020)
+    X_Feb_2020_train, X_Feb_2020_test, y_Feb_2020_train, y_Feb_2020_test = train_test_split(X_Feb_2020, y_Feb_2020, test_size = test_size, stratify = y_Feb_2020, random_state = seed)
     
-    X_Feb_2021_train, X_Feb_2021_test, y_Feb_2021_train, y_Feb_2021_test = train_test_split(X_Feb_2021, y_Feb_2021, test_size = test_size, stratify = y_Feb_2021)
+    X_Feb_2021_train, X_Feb_2021_test, y_Feb_2021_train, y_Feb_2021_test = train_test_split(X_Feb_2021, y_Feb_2021, test_size = test_size, stratify = y_Feb_2021, random_state = seed)
     
     X_trainval = pd.concat((X_Feb_2019_train, X_Aug_2019_train, X_Feb_2020_train, X_Feb_2021_train))
     X_test = pd.concat((X_Feb_2019_test, X_Aug_2019_test, X_Feb_2020_test, X_Aug_2020, X_Feb_2021_test, X_Aug_2021))
@@ -148,6 +150,7 @@ def time_split(df, m = 3, test_size = 0.75):
     return X_trainval, X_test, y_trainval, y_test
 
 def op_split(df, m = 3, test_size = 0.5):
+    seed = 27
     OP07 = df[df["OP"] == "OP07"]
     OP01 = df[df["OP"] == "OP01"]
     OP02 = df[df["OP"] == "OP02"]
@@ -163,15 +166,15 @@ def op_split(df, m = 3, test_size = 0.5):
     X_OP, y_OP = OP.iloc[:,:m], OP.iloc[:,-1]
     
     
-    X_OP07_train, X_OP07_test, y_OP07_train, y_OP07_test = train_test_split(X_OP07, y_OP07, test_size = test_size, stratify = y_OP07)
+    X_OP07_train, X_OP07_test, y_OP07_train, y_OP07_test = train_test_split(X_OP07, y_OP07, test_size = test_size, stratify = y_OP07, random_state = seed)
     
-    X_OP01_train, X_OP01_test, y_OP01_train, y_OP01_test = train_test_split(X_OP01, y_OP01, test_size = test_size, stratify = y_OP01)
+    X_OP01_train, X_OP01_test, y_OP01_train, y_OP01_test = train_test_split(X_OP01, y_OP01, test_size = test_size, stratify = y_OP01, random_state = seed)
     
-    X_OP02_train, X_OP02_test, y_OP02_train, y_OP02_test = train_test_split(X_OP02, y_OP02, test_size = test_size, stratify = y_OP02)
+    X_OP02_train, X_OP02_test, y_OP02_train, y_OP02_test = train_test_split(X_OP02, y_OP02, test_size = test_size, stratify = y_OP02, random_state = seed)
     
-    X_OP10_train, X_OP10_test, y_OP10_train, y_OP10_test = train_test_split(X_OP10, y_OP10, test_size = test_size, stratify = y_OP10)
+    X_OP10_train, X_OP10_test, y_OP10_train, y_OP10_test = train_test_split(X_OP10, y_OP10, test_size = test_size, stratify = y_OP10, random_state = seed)
     
-    X_OP04_train, X_OP04_test, y_OP04_train, y_OP04_test = train_test_split(X_OP04, y_OP04, test_size = test_size, stratify = y_OP04)
+    X_OP04_train, X_OP04_test, y_OP04_train, y_OP04_test = train_test_split(X_OP04, y_OP04, test_size = test_size, stratify = y_OP04, random_state = seed)
     
     X_trainval = pd.concat((X_OP07_train, X_OP01_train, X_OP02_train, X_OP10_train, X_OP04_train))
     X_test = pd.concat((X_OP07_test, X_OP01_test, X_OP02_test, X_OP10_test, X_OP04_test, X_OP))
@@ -243,6 +246,7 @@ def extract_mean_rank(cv_results):
 def get_uni_test_results(model, df):
     model_f1 = []
     model_recall = []
+    model_cm = []
     model_objects = []
     
     for i, split in enumerate(splits):
@@ -256,17 +260,19 @@ def get_uni_test_results(model, df):
         X_test = X_test.reshape((X_test.shape[0], X_test.shape[1] * X_test.shape[2]))
         model.fit(X_train, y_train)
         y_preds = model.predict(X_test)
-        
+
         model_f1.append(f1_score(y_test, y_preds))
         model_recall.append(recall_score(y_test, y_preds))
+        model_cm.append(confusion_matrix(y_test, y_preds))
         model_objects.append(model)
     
-    results_model = {"model_f1": model_f1, "model_recall": model_recall}
+    results_model = {"model_f1": model_f1, "model_recall": model_recall, "model_cm": model_cm}
     return results_model, model_objects
 
 def get_test_results(model, df):
     model_f1 = []
     model_recall = []
+    model_cm = []
     model_objects = []
     
     for i, split in enumerate(splits):
@@ -279,9 +285,10 @@ def get_test_results(model, df):
         
         model_f1.append(f1_score(y_test, y_preds))
         model_recall.append(recall_score(y_test, y_preds))
+        model_cm.append(confusion_matrix(y_test, y_preds))
         model_objects.append(model)
     
-    results_model = {"model_f1": model_f1, "model_recall": model_recall}
+    results_model = {"model_f1": model_f1, "model_recall": model_recall, "model_cm": model_cm}
     return results_model, model_objects
 
 
