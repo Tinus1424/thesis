@@ -54,7 +54,7 @@ def preprocess_data(X_data, y_data):
     X = [X.astype(np.float32) for X in X_data] # List of X values in the same dtype
     return X, y, features
 
-def plot_class_dist(y, features):
+def plot_class_dist(y, features, save_plots = False):
     """
     Plots the class distribution operation wise
 
@@ -68,7 +68,7 @@ def plot_class_dist(y, features):
     y_reshaped = y.reshape((-1, 1))
     plots = np.hstack((features, y_reshaped))
     
-    for machine in np.unique(features[:, 0]):
+    for i, machine in enumerate(np.unique(features[:, 0]), 1):
         indices = np.where(plots[:, 0] == machine)
         machineplots = plots[indices]
         counts = {operation: {'0s': 0, '1s': 0} for operation in np.unique(machineplots[:, 3])}
@@ -93,7 +93,11 @@ def plot_class_dist(y, features):
         ax.set_ylabel("Counts")
         ax.set_title(f'Counts of Abnormal and Normal Processes for {machine}')
         ax.legend()
+        if save_plots == True:
+            plotname = f"plots/M0{i}_class_dist.pdf"
+            plt.savefig(plotname)
         plt.show()
+        
 
 from sklearn.model_selection import train_test_split
 def machine_split(df, m = 3, test_size = 0.7):
