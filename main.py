@@ -7,6 +7,7 @@ import pickle
 import data_loader_utils
 from random import shuffle
 from pathlib import Path
+import time
 
 
 from sklearn.metrics import f1_score, recall_score, confusion_matrix, ConfusionMatrixDisplay
@@ -89,13 +90,14 @@ def plot_class_dist(y, features, save_plots = False):
         bars2 = ax.bar(labels, count_ones, bottom=count_zeros, label="Normal", color="blue")  # Stack on top of 0s
         ax.set_xlim(-0.5, 15-0.5)
         
-        ax.set_xlabel("Operations")
-        ax.set_ylabel("Counts")
-        ax.set_title(f'Counts of Abnormal and Normal Processes for {machine}')
-        ax.legend()
+        ax.set_xlabel("Operations", fontsize = 24)
+        ax.set_ylabel("Counts", fontsize = 24)
+
+        ax.set_title(f'Counts of Abnormal and Normal Processes for {machine}', fontsize = 36)
+        ax.legend(fontsize = 14)
         if save_plots == True:
             plotname = f"plots/M0{i}_class_dist.pdf"
-            plt.savefig(plotname)
+            plt.savefig(plotname, bbox_inches='tight')
         plt.show()
         
 
@@ -274,9 +276,16 @@ def get_uni_test_results(model, df):
     return results_model, model_objects
 
 def get_test_results(model, df):
+    train_f1 = []
+    train_recall = []
+    train_cm = []
+    
     model_f1 = []
     model_recall = []
     model_cm = []
+
+    train_time = []
+    pred_time = []
     model_objects = []
     
     for i, split in enumerate(splits):
@@ -284,15 +293,36 @@ def get_test_results(model, df):
         splitter = split_functions[i]
         
         X_train, X_test, y_train, y_test = splitter(df)
+        start_train = time.time()
         model.fit(X_train, y_train)
-        y_preds = model.predict(X_test)
+        end_train = time.time()
         
+        train_preds = model.predict(X_train)
+        start_pred = time.time()
+        y_preds = model.predict(X_test)
+        end_pred = time.time()
+
+        train_f1.append(f1_score(y_train, train_preds))
+        train_recall.append(recall_score(y_train, train_preds))
+        train_cm.append(confusion_matrix(y_train, train_preds))
+    
         model_f1.append(f1_score(y_test, y_preds))
         model_recall.append(recall_score(y_test, y_preds))
         model_cm.append(confusion_matrix(y_test, y_preds))
+
+        train_time.append(end_train - start_train)
+        pred_time.append(end_pred - start_pred)
         model_objects.append(model)
     
-    results_model = {"model_f1": model_f1, "model_recall": model_recall, "model_cm": model_cm}
+    results_model = {"train_f1": train_f1, 
+                     "train_recall": train_recall,
+                     "train_cm": train_cm,
+                     "train_time": train_time,
+                     "model_f1": model_f1, 
+                     "model_recall": model_recall, 
+                     "model_cm": model_cm,
+                     "test_time": pred_time
+                    }
     return results_model, model_objects
 
 
