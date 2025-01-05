@@ -1,19 +1,12 @@
-import os
-import itertools 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt 
-import pickle
-import data_loader_utils
-from random import shuffle
-from pathlib import Path
 import time
 
-
-from sklearn.metrics import f1_score, recall_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import f1_score, recall_score, precision_score, accuracy_score, roc_auc_score, confusion_matrix, ConfusionMatrixDisplay, RocCurveDisplay
 from sklearn.model_selection import train_test_split, StratifiedKFold, GridSearchCV, ParameterGrid
 
-
+from sktime.datatypes._panel._convert import from_nested_to_3d_numpy
 
 
 def get_df(X_data, y_data):
@@ -32,7 +25,6 @@ def get_df(X_data, y_data):
     df = X_df.join(y_df).rename(columns = {0: "MC", 1: "MM", 2: "YY", 3: "OP", 4: "n", 5: "y"})
     df["y"] = df["y"].apply(lambda x: 1 if x == "bad" else 0)
     return df
-
 
 def preprocess_data(X_data, y_data):
     """
@@ -100,8 +92,6 @@ def plot_class_dist(y, features, save_plots = False):
             plt.savefig(plotname, bbox_inches='tight')
         plt.show()
         
-
-from sklearn.model_selection import train_test_split
 def machine_split(df, m = 3, test_size = 0.7):
     seed = 27
     M01 = df[df["MC"] == "M01"]
@@ -122,7 +112,6 @@ def machine_split(df, m = 3, test_size = 0.7):
     X_test = pd.concat((X_M01_test, X_M02_test, X_M03))
     y_test = pd.concat((y_M01_test, y_M02_test, y_M03))
     return X_trainval, X_test, y_trainval, y_test
-
 
 def time_split(df, m = 3, test_size = 0.75):
     seed = 27
@@ -189,39 +178,15 @@ def op_split(df, m = 3, test_size = 0.5):
     y_test = pd.concat((y_OP07_test, y_OP01_test, y_OP02_test, y_OP10_test, y_OP04_test, y_OP))
     return X_trainval, X_test, y_trainval, y_test
 
-
-from sktime.datatypes._panel._convert import from_nested_to_3d_numpy
 split_functions = [machine_split, time_split, op_split] 
 splits = ["machine", "time", "operation"]
-def get_uni_cv_results(clf, param_grid, df, n_jobs = -1, splits = splits, split_functions = split_functions):
-    cv_results = {}
-    gs_objects = {}
-    for i, split in enumerate(splits):
-        print(f"Hyperparameter tuning on{split}-wise split...")
-        splitter = split_functions[i]
-        X_train, __, y_train, __ = splitter(df)
-        X_train = from_nested_to_3d_numpy(X_train)
-        X_train = X_train.reshape((X_train.shape[0], X_train.shape[1] * X_train.shape[2]))
-        gs = GridSearchCV(clf, 
-                          param_grid, 
-                          scoring = "f1", 
-                          n_jobs = n_jobs, 
-                          cv = StratifiedKFold(n_splits = 3)
-                         )
-        gs.fit(X_train, y_train)
-
-        cv_results[split] = gs.cv_results_
-        gs_objects[split] = gs
-    return cv_results, gs_objects
-
-
 def get_cv_results(clf, param_grid, df, n_jobs = -1, splits = splits, split_functions = split_functions):
     cv_results = {}
     gs_objects = {}
     for i, split in enumerate(splits):
         print(f"Hyperparameter tuning on {split}-wise split...")
         splitter = split_functions[i]
-        X_train, __, y_train, __ = splitter(df)
+        X_train, X_val, y_train, y_val = splitter(df)
         gs = GridSearchCV(clf, 
                           param_grid, 
                           scoring = "f1", 
@@ -233,7 +198,6 @@ def get_cv_results(clf, param_grid, df, n_jobs = -1, splits = splits, split_func
         cv_results[split] = gs.cv_results_
         gs_objects[split] = gs
     return cv_results, gs_objects
-
 
 def extract_mean_rank(cv_results):
     n_models = pd.DataFrame(cv_results["machine"]).shape[0]
@@ -249,40 +213,21 @@ def extract_mean_rank(cv_results):
     best_params = split_df.iloc[best_model]["params"]
     return mean_rank, best_params
 
-def get_uni_test_results(model, df):
-    model_f1 = []
-    model_recall = []
-    model_cm = []
-    model_objects = []
-    
-    for i, split in enumerate(splits):
-        print(f"Testing {split}-wise split")
-        splitter = split_functions[i]
-        
-        X_train, X_test, y_train, y_test = splitter(df, m = 1)
-        X_train = from_nested_to_3d_numpy(X_train)
-        X_train = X_train.reshape((X_train.shape[0], X_train.shape[1] * X_train.shape[2]))
-        X_test = from_nested_to_3d_numpy(X_test)
-        X_test = X_test.reshape((X_test.shape[0], X_test.shape[1] * X_test.shape[2]))
-        model.fit(X_train, y_train)
-        y_preds = model.predict(X_test)
-
-        model_f1.append(f1_score(y_test, y_preds))
-        model_recall.append(recall_score(y_test, y_preds))
-        model_cm.append(confusion_matrix(y_test, y_preds))
-        model_objects.append(model)
-    
-    results_model = {"model_f1": model_f1, "model_recall": model_recall, "model_cm": model_cm}
-    return results_model, model_objects
-
 def get_test_results(model, df):
     train_f1 = []
     train_recall = []
+    train_precision = []
+    train_accuracy = []
+    train_roc_auc = []
     train_cm = []
     
     model_f1 = []
     model_recall = []
+    model_precision = []
+    model_accuracy = []
+    model_roc_auc = []
     model_cm = []
+    model_display = []
 
     train_time = []
     pred_time = []
@@ -304,11 +249,18 @@ def get_test_results(model, df):
 
         train_f1.append(f1_score(y_train, train_preds))
         train_recall.append(recall_score(y_train, train_preds))
+        train_precision.append(precision_score(y_train, train_preds))
+        train_accuracy.append(accuracy_score(y_train, train_preds))
+        train_roc_auc.append(roc_auc_score(y_train, train_preds))
         train_cm.append(confusion_matrix(y_train, train_preds))
     
         model_f1.append(f1_score(y_test, y_preds))
         model_recall.append(recall_score(y_test, y_preds))
+        model_precision.append(precision_score(y_test, y_preds))
+        model_accuracy.append(accuracy_score(y_test, y_preds))
+        model_roc_auc.append(roc_auc_score(y_test, y_preds))
         model_cm.append(confusion_matrix(y_test, y_preds))
+        model_display.append(RocCurveDisplay.from_predictions(y_test, y_preds))
 
         train_time.append(end_train - start_train)
         pred_time.append(end_pred - start_pred)
@@ -316,11 +268,18 @@ def get_test_results(model, df):
     
     results_model = {"train_f1": train_f1, 
                      "train_recall": train_recall,
+                     "train_precision": train_precision,
+                     "train_accuracy": train_accuracy,
+                     "train_roc_auc": train_roc_auc,
                      "train_cm": train_cm,
                      "train_time": train_time,
                      "model_f1": model_f1, 
                      "model_recall": model_recall, 
+                     "model_precision": model_precision,
+                     "model_accuracy": model_accuracy,
+                     "model_roc_auc": model_roc_auc,
                      "model_cm": model_cm,
+                     "model_display": model_display,
                      "test_time": pred_time
                     }
     return results_model, model_objects
